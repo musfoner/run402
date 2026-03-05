@@ -96,25 +96,11 @@ Project credentials are saved to `~/.config/run402/projects.json` with `0600` pe
 | `RUN402_API_BASE` | `https://api.run402.com` | API base URL |
 | `RUN402_CONFIG_DIR` | `~/.config/run402` | Config directory for key storage |
 
-## Tiers
-
-| Tier | Price | Lease | Storage | API Calls |
-|------|-------|-------|---------|-----------|
-| prototype | $0.10 | 7 days | 250 MB | 500K |
-| hobby | $5.00 | 30 days | 1 GB | 5M |
-| team | $20.00 | 30 days | 10 GB | 50M |
-
 ## Development
 
 ```bash
-# Build
-npm run build -w packages/mcp
-
-# Unit tests
-npm run test:mcp
-
-# Integration tests (needs running API)
-npm run test:mcp:e2e
+npm run build
+npm run test:skill
 ```
 
 ## License

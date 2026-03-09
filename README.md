@@ -2,6 +2,8 @@
 
 MCP server for [Run402](https://run402.com) — provision and manage AI-native Postgres databases from any MCP-compatible client.
 
+English | [简体中文](./README.zh-CN.md)
+
 ## Quick Start
 
 ```bash

@@ -5,8 +5,14 @@ export function getApiBase(): string {
   return process.env.RUN402_API_BASE || "https://api.run402.com";
 }
 
+function getConfigDir(): string {
+  return process.env.RUN402_CONFIG_DIR || join(homedir(), ".config", "run402");
+}
+
 export function getKeystorePath(): string {
-  const configDir =
-    process.env.RUN402_CONFIG_DIR || join(homedir(), ".config", "run402");
-  return join(configDir, "projects.json");
+  return join(getConfigDir(), "projects.json");
+}
+
+export function getWalletPath(): string {
+  return join(getConfigDir(), "wallet.json");
 }

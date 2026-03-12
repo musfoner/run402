@@ -48,6 +48,13 @@ import { archiveProjectSchema, handleArchiveProject } from "./tools/archive-proj
 import { checkBalanceSchema, handleCheckBalance } from "./tools/check-balance.js";
 import { listProjectsSchema, handleListProjects } from "./tools/list-projects.js";
 
+// New tools — wallet, faucet, image
+import { walletStatusSchema, handleWalletStatus } from "./tools/wallet-status.js";
+import { walletCreateSchema, handleWalletCreate } from "./tools/wallet-create.js";
+import { walletExportSchema, handleWalletExport } from "./tools/wallet-export.js";
+import { requestFaucetSchema, handleRequestFaucet } from "./tools/request-faucet.js";
+import { generateImageSchema, handleGenerateImage } from "./tools/generate-image.js";
+
 const server = new McpServer({
   name: "run402",
   version: "0.2.0",
@@ -291,6 +298,45 @@ server.tool(
   "List all active projects for a wallet address.",
   listProjectsSchema,
   async (args) => handleListProjects(args),
+);
+
+// ─── Wallet & faucet tools ────────────────────────────────────────────────
+
+server.tool(
+  "wallet_status",
+  "Check local wallet status — address, network, and funding status.",
+  walletStatusSchema,
+  async (args) => handleWalletStatus(args),
+);
+
+server.tool(
+  "wallet_create",
+  "Create a new local wallet (Base Sepolia testnet). Generates a private key and derives the Ethereum address. Saved to ~/.config/run402/wallet.json.",
+  walletCreateSchema,
+  async (args) => handleWalletCreate(args),
+);
+
+server.tool(
+  "wallet_export",
+  "Export the local wallet address. Safe to share publicly.",
+  walletExportSchema,
+  async (args) => handleWalletExport(args),
+);
+
+server.tool(
+  "request_faucet",
+  "Request free testnet USDC from the Run402 faucet (Base Sepolia). Rate limit: 1 per IP per 24h. Returns 0.25 USDC — enough for 2 prototype databases.",
+  requestFaucetSchema,
+  async (args) => handleRequestFaucet(args),
+);
+
+// ─── Image generation tools ──────────────────────────────────────────────
+
+server.tool(
+  "generate_image",
+  "Generate a PNG image from a text prompt. Costs $0.03 USDC via x402. Aspect ratios: square (1:1), landscape (16:9), portrait (9:16).",
+  generateImageSchema,
+  async (args) => handleGenerateImage(args),
 );
 
 const transport = new StdioServerTransport();

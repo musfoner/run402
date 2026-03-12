@@ -1,0 +1,401 @@
+/**
+ * sync.test.ts — Ensures MCP, CLI, and OpenClaw interfaces stay in sync
+ * with the Run402 API surface defined in llms.txt.
+ *
+ * Run:  node --test --import tsx sync.test.ts
+ *       npm run test:sync
+ */
+
+import { describe, it } from "node:test";
+import assert from "node:assert/strict";
+import { readFileSync, existsSync } from "node:fs";
+import { join, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
+import { homedir } from "node:os";
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+
+// ─── Source-file parsers ─────────────────────────────────────────────────────
+
+/** Extract all server.tool("name", ...) registrations from src/index.ts */
+function parseMcpTools(): string[] {
+  const src = readFileSync(join(__dirname, "src/index.ts"), "utf-8");
+  const tools: string[] = [];
+  const re = /server\.tool\(\s*\n?\s*"([^"]+)"/g;
+  let m;
+  while ((m = re.exec(src))) tools.push(m[1]);
+  return tools.sort();
+}
+
+/** Extract subcommand names from a .mjs file.
+ *  Matches both switch/case patterns and if-guard patterns like:
+ *    case "generate":           → "generate"
+ *    if (sub !== "generate")    → "generate"  (negation = only valid subcommand)
+ */
+function parseSubcommands(filePath: string): string[] {
+  if (!existsSync(filePath)) return [];
+  const src = readFileSync(filePath, "utf-8");
+  const cmds: string[] = [];
+  // Pattern 1: switch/case
+  const caseRe = /case\s+"(\w+)":/g;
+  let m;
+  while ((m = caseRe.exec(src))) cmds.push(m[1]);
+  // Pattern 2: if (sub !== "word") — the word is the only valid subcommand
+  const guardRe = /if\s*\(\s*sub\s*!==\s*"(\w+)"\s*\)/g;
+  while ((m = guardRe.exec(src))) cmds.push(m[1]);
+  // Deduplicate and filter out help/flag checks
+  return [...new Set(cmds)].filter(c => c !== "help" && !c.startsWith("-")).sort();
+}
+
+/** Parse CLI commands as "module:subcommand" pairs */
+function parseCliCommands(): string[] {
+  const cmds: string[] = [];
+  for (const mod of ["wallet", "projects", "image"]) {
+    for (const sub of parseSubcommands(join(__dirname, "cli/lib", `${mod}.mjs`))) {
+      cmds.push(`${mod}:${sub}`);
+    }
+  }
+  if (existsSync(join(__dirname, "cli/lib/deploy.mjs"))) cmds.push("deploy");
+  return cmds.sort();
+}
+
+/** Parse OpenClaw commands as "module:subcommand" pairs */
+function parseOpenClawCommands(): string[] {
+  const cmds: string[] = [];
+  for (const mod of ["wallet", "projects", "image"]) {
+    for (const sub of parseSubcommands(join(__dirname, "openclaw/scripts", `${mod}.mjs`))) {
+      cmds.push(`${mod}:${sub}`);
+    }
+  }
+  if (existsSync(join(__dirname, "openclaw/scripts/deploy.mjs"))) cmds.push("deploy");
+  return cmds.sort();
+}
+
+/** Parse MCP tool names from the llms.txt MCP Tools table */
+function parseLlmsTxtMcpTools(llmsTxt: string): string[] {
+  const tools: string[] = [];
+  const re = /\|\s*`([a-z_]+)`\s*\|/g;
+  // Only match lines within the MCP Tools table (after "### MCP Tools" heading)
+  const mcpSection = llmsTxt.split(/^### MCP Tools$/m)[1];
+  if (!mcpSection) return tools;
+  // Stop at the next ### heading or ---
+  const tableSection = mcpSection.split(/^(?:###|---)/m)[0];
+  let m;
+  while ((m = re.exec(tableSection))) tools.push(m[1]);
+  return tools.sort();
+}
+
+/** Extract API endpoints from llms.txt endpoint tables */
+function parseLlmsTxtEndpoints(llmsTxt: string): string[] {
+  const endpoints: string[] = [];
+  // Match table rows like: | `/v1/projects` | POST | ... |
+  // or: | `/v1/projects/:id/renew` | POST | ... |
+  const re = /\|\s*`(\/[^`]+)`\s*\|\s*(GET|POST|PATCH|DELETE)\s*\|/g;
+  let m;
+  while ((m = re.exec(llmsTxt))) {
+    endpoints.push(`${m[2]} ${m[1]}`);
+  }
+  return [...new Set(endpoints)].sort();
+}
+
+// ─── Canonical API surface ───────────────────────────────────────────────────
+// Source of truth: llms.txt at run402.com/llms.txt
+// Each entry maps an API endpoint to its expected tool/command in each interface.
+//
+// null = intentionally not in this interface (with reason in comment)
+// string = expected tool/command name
+//
+// When you add a new endpoint or tool, add it here. The test will fail if
+// the implementation doesn't match.
+
+interface Capability {
+  /** Human-readable capability name */
+  id: string;
+  /** API endpoint(s) from llms.txt */
+  endpoint: string;
+  /** Expected MCP tool name, or null if intentionally excluded */
+  mcp: string | null;
+  /** Expected CLI command as "module:sub" or "module", or null */
+  cli: string | null;
+  /** Expected OpenClaw command (must match CLI if both non-null) */
+  openclaw: string | null;
+}
+
+const SURFACE: Capability[] = [
+  // ── Project lifecycle ────────────────────────────────────────────────────
+  { id: "get_quote",         endpoint: "POST /v1/projects/quote",          mcp: "get_quote",                    cli: null,                  openclaw: null },
+  { id: "provision",         endpoint: "POST /v1/projects",                mcp: "provision_postgres_project",    cli: null,                  openclaw: null },
+  { id: "renew",             endpoint: "POST /v1/projects/:id/renew",      mcp: "renew_project",                 cli: "projects:renew",      openclaw: "projects:renew" },
+  { id: "archive",           endpoint: "DELETE /v1/projects/:id",          mcp: "archive_project",               cli: "projects:delete",     openclaw: "projects:delete" },
+
+  // ── Faucet ───────────────────────────────────────────────────────────────
+  { id: "faucet",            endpoint: "POST /v1/faucet",                  mcp: "request_faucet",                cli: "wallet:fund",         openclaw: "wallet:fund" },
+
+  // ── Database / Admin ─────────────────────────────────────────────────────
+  { id: "run_sql",           endpoint: "POST /admin/v1/projects/:id/sql",  mcp: "run_sql",                       cli: "projects:sql",        openclaw: "projects:sql" },
+  { id: "rest_query",        endpoint: "/rest/v1/:table",                  mcp: "rest_query",                    cli: "projects:rest",       openclaw: "projects:rest" },
+  { id: "setup_rls",         endpoint: "POST /admin/v1/projects/:id/rls",  mcp: "setup_rls",                     cli: null,                  openclaw: null },
+  { id: "get_schema",        endpoint: "GET /admin/v1/projects/:id/schema",mcp: "get_schema",                    cli: "projects:schema",     openclaw: "projects:schema" },
+  { id: "get_usage",         endpoint: "GET /admin/v1/projects/:id/usage", mcp: "get_usage",                     cli: "projects:usage",      openclaw: "projects:usage" },
+
+  // ── Storage ──────────────────────────────────────────────────────────────
+  { id: "upload_file",       endpoint: "POST /storage/v1/object/:bucket/*",    mcp: "upload_file",    cli: null, openclaw: null },
+  { id: "download_file",     endpoint: "GET /storage/v1/object/:bucket/*",     mcp: "download_file",  cli: null, openclaw: null },
+  { id: "delete_file",       endpoint: "DELETE /storage/v1/object/:bucket/*",  mcp: "delete_file",    cli: null, openclaw: null },
+  { id: "list_files",        endpoint: "GET /storage/v1/object/list/:bucket",  mcp: "list_files",     cli: null, openclaw: null },
+
+  // ── Functions ────────────────────────────────────────────────────────────
+  { id: "deploy_function",   endpoint: "POST /admin/v1/projects/:id/functions",              mcp: "deploy_function",   cli: null, openclaw: null },
+  { id: "invoke_function",   endpoint: "POST /functions/v1/:name",                            mcp: "invoke_function",   cli: null, openclaw: null },
+  { id: "get_function_logs", endpoint: "GET /admin/v1/projects/:id/functions/:name/logs",    mcp: "get_function_logs", cli: null, openclaw: null },
+  { id: "list_functions",    endpoint: "GET /admin/v1/projects/:id/functions",                mcp: "list_functions",    cli: null, openclaw: null },
+  { id: "delete_function",   endpoint: "DELETE /admin/v1/projects/:id/functions/:name",      mcp: "delete_function",   cli: null, openclaw: null },
+
+  // ── Secrets ──────────────────────────────────────────────────────────────
+  { id: "set_secret",        endpoint: "POST /admin/v1/projects/:id/secrets",        mcp: "set_secret",    cli: null, openclaw: null },
+  { id: "list_secrets",      endpoint: "GET /admin/v1/projects/:id/secrets",         mcp: "list_secrets",  cli: null, openclaw: null },
+  { id: "delete_secret",     endpoint: "DELETE /admin/v1/projects/:id/secrets/:key", mcp: "delete_secret", cli: null, openclaw: null },
+
+  // ── Sites / Deployments ──────────────────────────────────────────────────
+  { id: "deploy_site",       endpoint: "POST /v1/deployments",             mcp: "deploy_site",       cli: null, openclaw: null },
+  { id: "claim_subdomain",   endpoint: "POST /v1/subdomains",             mcp: "claim_subdomain",   cli: null, openclaw: null },
+  { id: "delete_subdomain",  endpoint: "DELETE /v1/subdomains/:name",     mcp: "delete_subdomain",  cli: null, openclaw: null },
+  { id: "list_subdomains",   endpoint: "GET /v1/subdomains",              mcp: "list_subdomains",   cli: null, openclaw: null },
+
+  // ── Bundle deploy ────────────────────────────────────────────────────────
+  { id: "bundle_deploy",     endpoint: "POST /v1/deploy/:tier",           mcp: "bundle_deploy",     cli: "deploy",           openclaw: "deploy" },
+
+  // ── Marketplace ──────────────────────────────────────────────────────────
+  { id: "browse_apps",       endpoint: "GET /v1/apps",                            mcp: "browse_apps",   cli: null, openclaw: null },
+  { id: "fork_app",          endpoint: "POST /v1/fork/:tier",                     mcp: "fork_app",      cli: null, openclaw: null },
+  { id: "publish_app",       endpoint: "POST /admin/v1/projects/:id/publish",     mcp: "publish_app",   cli: null, openclaw: null },
+  { id: "list_versions",     endpoint: "GET /admin/v1/projects/:id/versions",     mcp: "list_versions", cli: null, openclaw: null },
+
+  // ── Billing ──────────────────────────────────────────────────────────────
+  { id: "check_balance",     endpoint: "GET /v1/billing/accounts/:wallet",         mcp: "check_balance",  cli: null, openclaw: null },
+  { id: "list_projects",     endpoint: "GET /v1/wallets/:wallet/projects",         mcp: "list_projects",  cli: "projects:list",  openclaw: "projects:list" },
+
+  // ── Image generation ─────────────────────────────────────────────────────
+  { id: "generate_image",    endpoint: "POST /v1/generate-image",          mcp: "generate_image",   cli: "image:generate",   openclaw: "image:generate" },
+
+  // ── Wallet management ──────────────────────────────────────────────────
+  { id: "wallet_status",     endpoint: "(local)",                          mcp: "wallet_status",    cli: "wallet:status",    openclaw: "wallet:status" },
+  { id: "wallet_create",     endpoint: "(local)",                          mcp: "wallet_create",    cli: "wallet:create",    openclaw: "wallet:create" },
+  { id: "wallet_export",     endpoint: "(local)",                          mcp: "wallet_export",    cli: "wallet:export",    openclaw: "wallet:export" },
+];
+
+// ─── Derived expected sets ───────────────────────────────────────────────────
+
+const EXPECTED_MCP_TOOLS = SURFACE
+  .map(c => c.mcp)
+  .filter((t): t is string => t !== null)
+  .sort();
+
+const EXPECTED_CLI_COMMANDS = SURFACE
+  .map(c => c.cli)
+  .filter((t): t is string => t !== null)
+  .sort();
+
+const EXPECTED_OPENCLAW_COMMANDS = SURFACE
+  .map(c => c.openclaw)
+  .filter((t): t is string => t !== null)
+  .sort();
+
+// ─── Tests ───────────────────────────────────────────────────────────────────
+
+describe("MCP tool inventory", () => {
+  const actual = parseMcpTools();
+
+  it("has all expected tools", () => {
+    const missing = EXPECTED_MCP_TOOLS.filter(t => !actual.includes(t));
+    assert.deepEqual(
+      missing,
+      [],
+      `MCP is missing tools. Either implement them in src/tools/ and register in src/index.ts, ` +
+        `or remove from SURFACE in sync.test.ts: ${missing.join(", ")}`,
+    );
+  });
+
+  it("has no untracked tools", () => {
+    const unexpected = actual.filter(t => !EXPECTED_MCP_TOOLS.includes(t));
+    assert.deepEqual(
+      unexpected,
+      [],
+      `MCP has tools not in SURFACE. Add them to sync.test.ts: ${unexpected.join(", ")}`,
+    );
+  });
+});
+
+describe("CLI command inventory", () => {
+  const actual = parseCliCommands();
+
+  it("has all expected commands", () => {
+    const missing = EXPECTED_CLI_COMMANDS.filter(c => !actual.includes(c));
+    assert.deepEqual(
+      missing,
+      [],
+      `CLI is missing commands. Either implement in cli/lib/ or remove from SURFACE: ${missing.join(", ")}`,
+    );
+  });
+
+  it("has no untracked commands", () => {
+    const unexpected = actual.filter(c => !EXPECTED_CLI_COMMANDS.includes(c));
+    assert.deepEqual(
+      unexpected,
+      [],
+      `CLI has commands not in SURFACE. Add them to sync.test.ts: ${unexpected.join(", ")}`,
+    );
+  });
+});
+
+describe("OpenClaw command inventory", () => {
+  const actual = parseOpenClawCommands();
+
+  it("has all expected commands", () => {
+    const missing = EXPECTED_OPENCLAW_COMMANDS.filter(c => !actual.includes(c));
+    assert.deepEqual(
+      missing,
+      [],
+      `OpenClaw is missing commands. Either implement in openclaw/scripts/ or remove from SURFACE: ${missing.join(", ")}`,
+    );
+  });
+
+  it("has no untracked commands", () => {
+    const unexpected = actual.filter(c => !EXPECTED_OPENCLAW_COMMANDS.includes(c));
+    assert.deepEqual(
+      unexpected,
+      [],
+      `OpenClaw has commands not in SURFACE. Add them to sync.test.ts: ${unexpected.join(", ")}`,
+    );
+  });
+});
+
+describe("CLI ↔ OpenClaw parity", () => {
+  it("have identical command sets", () => {
+    const cli = parseCliCommands();
+    const openclaw = parseOpenClawCommands();
+    assert.deepEqual(
+      cli,
+      openclaw,
+      "CLI and OpenClaw must have the same commands. " +
+        `CLI-only: [${cli.filter(c => !openclaw.includes(c)).join(", ")}], ` +
+        `OpenClaw-only: [${openclaw.filter(c => !cli.includes(c)).join(", ")}]`,
+    );
+  });
+
+  it("SURFACE declares same cli and openclaw for each capability", () => {
+    const mismatches = SURFACE.filter(
+      c => (c.cli === null) !== (c.openclaw === null) || c.cli !== c.openclaw,
+    );
+    assert.deepEqual(
+      mismatches.map(c => c.id),
+      [],
+      "Every SURFACE entry must have identical cli and openclaw values (or both null). " +
+        `Mismatches: ${mismatches.map(c => `${c.id}: cli=${c.cli}, openclaw=${c.openclaw}`).join("; ")}`,
+    );
+  });
+});
+
+describe("SURFACE consistency", () => {
+  it("has no duplicate capability IDs", () => {
+    const ids = SURFACE.map(c => c.id);
+    const dupes = ids.filter((id, i) => ids.indexOf(id) !== i);
+    assert.deepEqual(dupes, [], `Duplicate capability IDs: ${dupes.join(", ")}`);
+  });
+
+  it("has no duplicate MCP tool names", () => {
+    const tools = SURFACE.map(c => c.mcp).filter(Boolean);
+    const dupes = tools.filter((t, i) => tools.indexOf(t) !== i);
+    assert.deepEqual(dupes, [], `Duplicate MCP tool names: ${dupes.join(", ")}`);
+  });
+
+  it("has no duplicate CLI commands", () => {
+    const cmds = SURFACE.map(c => c.cli).filter(Boolean);
+    const dupes = cmds.filter((c, i) => cmds.indexOf(c) !== i);
+    assert.deepEqual(dupes, [], `Duplicate CLI commands: ${dupes.join(", ")}`);
+  });
+
+  it("every capability is covered by at least one interface", () => {
+    const uncovered = SURFACE.filter(c => !c.mcp && !c.cli && !c.openclaw);
+    assert.deepEqual(
+      uncovered.map(c => c.id),
+      [],
+      `Capabilities with no implementation in any interface: ${uncovered.map(c => c.id).join(", ")}`,
+    );
+  });
+});
+
+// ─── llms.txt alignment (conditional — only if the main repo is available) ───
+
+const LLMS_TXT_PATH = join(homedir(), "dev/run402/site/llms.txt");
+const llmsTxtAvailable = existsSync(LLMS_TXT_PATH);
+
+describe("llms.txt alignment", { skip: !llmsTxtAvailable && "~/dev/run402/site/llms.txt not found" }, () => {
+  const llmsTxt = llmsTxtAvailable ? readFileSync(LLMS_TXT_PATH, "utf-8") : "";
+
+  it("MCP Tools table lists all actual MCP tools", () => {
+    const documented = parseLlmsTxtMcpTools(llmsTxt);
+    const actual = parseMcpTools();
+    const missing = actual.filter(t => !documented.includes(t));
+    assert.deepEqual(
+      missing,
+      [],
+      `llms.txt MCP Tools table is missing tools. Update the table in llms.txt: ${missing.join(", ")}`,
+    );
+  });
+
+  it("MCP Tools table has no stale entries", () => {
+    const documented = parseLlmsTxtMcpTools(llmsTxt);
+    const actual = parseMcpTools();
+    const stale = documented.filter(t => !actual.includes(t));
+    assert.deepEqual(
+      stale,
+      [],
+      `llms.txt MCP Tools table lists tools that don't exist in the MCP: ${stale.join(", ")}`,
+    );
+  });
+
+  it("all SURFACE endpoints appear in llms.txt", () => {
+    const missing = SURFACE
+      .filter(c => c.endpoint !== "(local)")
+      .filter(c => {
+        // Strip method prefix and normalize param placeholders for matching.
+        // e.g. "POST /v1/projects/:id/renew" → check that "/v1/projects/" and "/renew" appear
+        const path = c.endpoint.replace(/^(GET|POST|PATCH|DELETE)\s+/, "");
+        // Direct match
+        if (llmsTxt.includes(path)) return false;
+        // Match with params stripped (e.g. /admin/v1/projects/:id/functions → /admin/v1/projects/ + /functions)
+        const segments = path.split(/\/:[^/]+/);
+        return !segments.every(seg => seg === "" || llmsTxt.includes(seg));
+      });
+    assert.deepEqual(
+      missing.map(c => `${c.id}: ${c.endpoint}`),
+      [],
+      `API endpoints in SURFACE not documented in llms.txt`,
+    );
+  });
+});
+
+// ─── Coverage summary (informational — always runs, prints gaps) ─────────────
+
+describe("coverage summary", () => {
+  it("prints current coverage matrix", () => {
+    const mcpOnly = SURFACE.filter(c => c.mcp && !c.cli);
+    const cliOnly = SURFACE.filter(c => !c.mcp && c.cli);
+    const both = SURFACE.filter(c => c.mcp && c.cli);
+
+    const lines = [
+      `\n  Coverage: ${both.length} in both MCP+CLI, ${mcpOnly.length} MCP-only, ${cliOnly.length} CLI-only`,
+      ``,
+      `  MCP-only (no CLI/OpenClaw equivalent):`,
+      ...mcpOnly.map(c => `    - ${c.mcp} (${c.endpoint})`),
+      ``,
+      `  CLI-only (no MCP equivalent):`,
+      ...cliOnly.map(c => `    - ${c.cli} (${c.endpoint})`),
+    ];
+
+    // This test always passes — it's purely informational
+    console.log(lines.join("\n"));
+    assert.ok(true);
+  });
+});

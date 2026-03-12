@@ -57,7 +57,7 @@ import { generateImageSchema, handleGenerateImage } from "./tools/generate-image
 
 const server = new McpServer({
   name: "run402",
-  version: "0.2.0",
+  version: "1.2.0",
 });
 
 // ─── Core database tools ────────────────────────────────────────────────────

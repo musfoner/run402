@@ -4,7 +4,7 @@
   "description": "CLI for Run402 — provision Postgres databases, deploy static sites, generate images, and manage wallets via x402 micropayments.",
   "type": "module",
   "bin": {
-    "run402": "./cli.mjs"
+    "run402": "cli.mjs"
   },
   "files": [
     "cli.mjs",
@@ -22,8 +22,14 @@
   "homepage": "https://run402.com",
   "repository": {
     "type": "git",
-    "url": "https://github.com/kychee-com/run402.git",
+    "url": "git+https://github.com/kychee-com/run402.git",
     "directory": "cli"
   },
-  "keywords": ["run402", "x402", "postgres", "ai-agent", "openclaw"]
+  "keywords": [
+    "run402",
+    "x402",
+    "postgres",
+    "ai-agent",
+    "openclaw"
+  ]
 }

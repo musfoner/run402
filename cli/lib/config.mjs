@@ -3,9 +3,10 @@
  * Kept in a separate module so credential reads stay isolated.
  */
 
-import { readFileSync, writeFileSync, existsSync, mkdirSync, chmodSync } from "fs";
-import { join } from "path";
+import { readFileSync, writeFileSync, existsSync, mkdirSync, chmodSync, renameSync } from "fs";
+import { join, dirname } from "path";
 import { homedir } from "os";
+import { randomBytes } from "crypto";
 
 export const CONFIG_DIR = join(homedir(), ".config", "run402");
 export const WALLET_FILE = join(CONFIG_DIR, "wallet.json");
@@ -19,8 +20,10 @@ export function readWallet() {
 
 export function saveWallet(data) {
   mkdirSync(CONFIG_DIR, { recursive: true });
-  writeFileSync(WALLET_FILE, JSON.stringify(data, null, 2), { mode: 0o600 });
-  try { chmodSync(WALLET_FILE, 0o600); } catch {}
+  const tmp = join(CONFIG_DIR, `.wallet.${randomBytes(4).toString("hex")}.tmp`);
+  writeFileSync(tmp, JSON.stringify(data, null, 2), { mode: 0o600 });
+  renameSync(tmp, WALLET_FILE);
+  chmodSync(WALLET_FILE, 0o600);
 }
 
 export function loadProjects() {

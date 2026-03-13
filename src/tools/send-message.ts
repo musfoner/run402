@@ -16,7 +16,7 @@ export async function handleSendMessage(args: {
 
   if (res.is402) {
     return {
-      content: [{ type: "text", text: `## Payment Required\n\nSending a message costs $0.01 via x402.\n\n${JSON.stringify(res.body, null, 2)}` }],
+      content: [{ type: "text", text: `## Auth Required\n\nSending a message requires wallet auth.\n\n${JSON.stringify(res.body, null, 2)}` }],
     };
   }
 

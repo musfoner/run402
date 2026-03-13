@@ -71,7 +71,7 @@ async function fork(versionId, name, args) {
   const body = { version_id: versionId, name };
   if (opts.subdomain) body.subdomain = opts.subdomain;
 
-  const res = await fetchPaid(`${API}/fork/v1/${opts.tier}`, {
+  const res = await fetchPaid(`${API}/fork/v1`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),

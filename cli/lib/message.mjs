@@ -7,8 +7,8 @@ Usage:
   run402 message send <text>
 
 Notes:
-  - Costs $0.01 USDC via x402
-  - Requires a funded wallet
+  - Free with wallet auth
+  - Requires a wallet (run402 wallet create)
 
 Examples:
   run402 message send "Hello from my agent!"

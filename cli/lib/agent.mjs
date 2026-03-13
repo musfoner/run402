@@ -7,7 +7,7 @@ Usage:
   run402 agent contact --name <name> [--email <email>] [--webhook <url>]
 
 Notes:
-  - Costs $0.001 USDC via x402
+  - Free with wallet auth
   - Registers contact info so Run402 can reach your agent
   - Only name is required; email and webhook are optional
 
@@ -48,7 +48,7 @@ async function contact(args) {
   if (webhook) body.webhook = webhook;
 
   const res = await fetchPaid(`${API}/agent/v1/contact`, {
-    method: "PUT",
+    method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });

@@ -123,76 +123,76 @@ interface Capability {
 
 const SURFACE: Capability[] = [
   // ── Project lifecycle ────────────────────────────────────────────────────
-  { id: "get_quote",         endpoint: "POST /v1/projects/quote",          mcp: "get_quote",                    cli: "projects:quote",      openclaw: "projects:quote" },
-  { id: "provision",         endpoint: "POST /v1/projects",                mcp: "provision_postgres_project",    cli: "projects:provision",  openclaw: "projects:provision" },
-  { id: "renew",             endpoint: "POST /v1/projects/:id/renew",      mcp: "renew_project",                 cli: "projects:renew",      openclaw: "projects:renew" },
-  { id: "archive",           endpoint: "DELETE /v1/projects/:id",          mcp: "archive_project",               cli: "projects:delete",     openclaw: "projects:delete" },
+  { id: "get_quote",         endpoint: "POST /projects/v1/quote",                mcp: "get_quote",                    cli: "projects:quote",      openclaw: "projects:quote" },
+  { id: "provision",         endpoint: "POST /projects/v1",                      mcp: "provision_postgres_project",    cli: "projects:provision",  openclaw: "projects:provision" },
+  { id: "renew",             endpoint: "POST /tiers/v1/renew/:tier",             mcp: "renew_project",                 cli: "projects:renew",      openclaw: "projects:renew" },
+  { id: "archive",           endpoint: "DELETE /projects/v1/:id",                mcp: "archive_project",               cli: "projects:delete",     openclaw: "projects:delete" },
 
   // ── Faucet ───────────────────────────────────────────────────────────────
-  { id: "faucet",            endpoint: "POST /v1/faucet",                  mcp: "request_faucet",                cli: "wallet:fund",         openclaw: "wallet:fund" },
+  { id: "faucet",            endpoint: "POST /faucet/v1",                        mcp: "request_faucet",                cli: "wallet:fund",         openclaw: "wallet:fund" },
 
   // ── Database / Admin ─────────────────────────────────────────────────────
-  { id: "run_sql",           endpoint: "POST /admin/v1/projects/:id/sql",  mcp: "run_sql",                       cli: "projects:sql",        openclaw: "projects:sql" },
-  { id: "rest_query",        endpoint: "/rest/v1/:table",                  mcp: "rest_query",                    cli: "projects:rest",       openclaw: "projects:rest" },
-  { id: "setup_rls",         endpoint: "POST /admin/v1/projects/:id/rls",  mcp: "setup_rls",                     cli: "projects:rls",        openclaw: "projects:rls" },
-  { id: "get_schema",        endpoint: "GET /admin/v1/projects/:id/schema",mcp: "get_schema",                    cli: "projects:schema",     openclaw: "projects:schema" },
-  { id: "get_usage",         endpoint: "GET /admin/v1/projects/:id/usage", mcp: "get_usage",                     cli: "projects:usage",      openclaw: "projects:usage" },
+  { id: "run_sql",           endpoint: "POST /projects/v1/admin/:id/sql",        mcp: "run_sql",                       cli: "projects:sql",        openclaw: "projects:sql" },
+  { id: "rest_query",        endpoint: "/rest/v1/:table",                        mcp: "rest_query",                    cli: "projects:rest",       openclaw: "projects:rest" },
+  { id: "setup_rls",         endpoint: "POST /projects/v1/admin/:id/rls",        mcp: "setup_rls",                     cli: "projects:rls",        openclaw: "projects:rls" },
+  { id: "get_schema",        endpoint: "GET /projects/v1/admin/:id/schema",      mcp: "get_schema",                    cli: "projects:schema",     openclaw: "projects:schema" },
+  { id: "get_usage",         endpoint: "GET /projects/v1/admin/:id/usage",       mcp: "get_usage",                     cli: "projects:usage",      openclaw: "projects:usage" },
 
   // ── Storage ──────────────────────────────────────────────────────────────
-  { id: "upload_file",       endpoint: "POST /storage/v1/object/:bucket/*",    mcp: "upload_file",    cli: "storage:upload",   openclaw: "storage:upload" },
-  { id: "download_file",     endpoint: "GET /storage/v1/object/:bucket/*",     mcp: "download_file",  cli: "storage:download", openclaw: "storage:download" },
-  { id: "delete_file",       endpoint: "DELETE /storage/v1/object/:bucket/*",  mcp: "delete_file",    cli: "storage:delete",   openclaw: "storage:delete" },
-  { id: "list_files",        endpoint: "GET /storage/v1/object/list/:bucket",  mcp: "list_files",     cli: "storage:list",     openclaw: "storage:list" },
+  { id: "upload_file",       endpoint: "POST /storage/v1/object/:bucket/*",      mcp: "upload_file",    cli: "storage:upload",   openclaw: "storage:upload" },
+  { id: "download_file",     endpoint: "GET /storage/v1/object/:bucket/*",       mcp: "download_file",  cli: "storage:download", openclaw: "storage:download" },
+  { id: "delete_file",       endpoint: "DELETE /storage/v1/object/:bucket/*",    mcp: "delete_file",    cli: "storage:delete",   openclaw: "storage:delete" },
+  { id: "list_files",        endpoint: "GET /storage/v1/object/list/:bucket",    mcp: "list_files",     cli: "storage:list",     openclaw: "storage:list" },
 
   // ── Functions ────────────────────────────────────────────────────────────
-  { id: "deploy_function",   endpoint: "POST /admin/v1/projects/:id/functions",              mcp: "deploy_function",   cli: "functions:deploy", openclaw: "functions:deploy" },
+  { id: "deploy_function",   endpoint: "POST /projects/v1/admin/:id/functions",              mcp: "deploy_function",   cli: "functions:deploy", openclaw: "functions:deploy" },
   { id: "invoke_function",   endpoint: "POST /functions/v1/:name",                            mcp: "invoke_function",   cli: "functions:invoke", openclaw: "functions:invoke" },
-  { id: "get_function_logs", endpoint: "GET /admin/v1/projects/:id/functions/:name/logs",    mcp: "get_function_logs", cli: "functions:logs",   openclaw: "functions:logs" },
-  { id: "list_functions",    endpoint: "GET /admin/v1/projects/:id/functions",                mcp: "list_functions",    cli: "functions:list",   openclaw: "functions:list" },
-  { id: "delete_function",   endpoint: "DELETE /admin/v1/projects/:id/functions/:name",      mcp: "delete_function",   cli: "functions:delete", openclaw: "functions:delete" },
+  { id: "get_function_logs", endpoint: "GET /projects/v1/admin/:id/functions/:name/logs",    mcp: "get_function_logs", cli: "functions:logs",   openclaw: "functions:logs" },
+  { id: "list_functions",    endpoint: "GET /projects/v1/admin/:id/functions",                mcp: "list_functions",    cli: "functions:list",   openclaw: "functions:list" },
+  { id: "delete_function",   endpoint: "DELETE /projects/v1/admin/:id/functions/:name",      mcp: "delete_function",   cli: "functions:delete", openclaw: "functions:delete" },
 
   // ── Secrets ──────────────────────────────────────────────────────────────
-  { id: "set_secret",        endpoint: "POST /admin/v1/projects/:id/secrets",        mcp: "set_secret",    cli: "secrets:set",    openclaw: "secrets:set" },
-  { id: "list_secrets",      endpoint: "GET /admin/v1/projects/:id/secrets",         mcp: "list_secrets",  cli: "secrets:list",   openclaw: "secrets:list" },
-  { id: "delete_secret",     endpoint: "DELETE /admin/v1/projects/:id/secrets/:key", mcp: "delete_secret", cli: "secrets:delete", openclaw: "secrets:delete" },
+  { id: "set_secret",        endpoint: "POST /projects/v1/admin/:id/secrets",        mcp: "set_secret",    cli: "secrets:set",    openclaw: "secrets:set" },
+  { id: "list_secrets",      endpoint: "GET /projects/v1/admin/:id/secrets",         mcp: "list_secrets",  cli: "secrets:list",   openclaw: "secrets:list" },
+  { id: "delete_secret",     endpoint: "DELETE /projects/v1/admin/:id/secrets/:key", mcp: "delete_secret", cli: "secrets:delete", openclaw: "secrets:delete" },
 
   // ── Sites / Deployments ──────────────────────────────────────────────────
-  { id: "deploy_site",       endpoint: "POST /v1/deployments",             mcp: "deploy_site",       cli: "sites:deploy",       openclaw: "sites:deploy" },
-  { id: "claim_subdomain",   endpoint: "POST /v1/subdomains",             mcp: "claim_subdomain",   cli: "subdomains:claim",   openclaw: "subdomains:claim" },
-  { id: "delete_subdomain",  endpoint: "DELETE /v1/subdomains/:name",     mcp: "delete_subdomain",  cli: "subdomains:delete",  openclaw: "subdomains:delete" },
-  { id: "list_subdomains",   endpoint: "GET /v1/subdomains",              mcp: "list_subdomains",   cli: "subdomains:list",    openclaw: "subdomains:list" },
+  { id: "deploy_site",       endpoint: "POST /deployments/v1",              mcp: "deploy_site",       cli: "sites:deploy",       openclaw: "sites:deploy" },
+  { id: "claim_subdomain",   endpoint: "POST /subdomains/v1",              mcp: "claim_subdomain",   cli: "subdomains:claim",   openclaw: "subdomains:claim" },
+  { id: "delete_subdomain",  endpoint: "DELETE /subdomains/v1/:name",      mcp: "delete_subdomain",  cli: "subdomains:delete",  openclaw: "subdomains:delete" },
+  { id: "list_subdomains",   endpoint: "GET /subdomains/v1",               mcp: "list_subdomains",   cli: "subdomains:list",    openclaw: "subdomains:list" },
 
   // ── Bundle deploy ────────────────────────────────────────────────────────
-  { id: "bundle_deploy",     endpoint: "POST /v1/deploy/:tier",           mcp: "bundle_deploy",     cli: "deploy",           openclaw: "deploy" },
+  { id: "bundle_deploy",     endpoint: "POST /deploy/v1",                  mcp: "bundle_deploy",     cli: "deploy",           openclaw: "deploy" },
 
   // ── Marketplace ──────────────────────────────────────────────────────────
-  { id: "browse_apps",       endpoint: "GET /v1/apps",                            mcp: "browse_apps",   cli: "apps:browse",   openclaw: "apps:browse" },
-  { id: "fork_app",          endpoint: "POST /v1/fork/:tier",                     mcp: "fork_app",      cli: "apps:fork",     openclaw: "apps:fork" },
-  { id: "publish_app",       endpoint: "POST /admin/v1/projects/:id/publish",     mcp: "publish_app",   cli: "apps:publish",  openclaw: "apps:publish" },
-  { id: "list_versions",     endpoint: "GET /admin/v1/projects/:id/versions",     mcp: "list_versions", cli: "apps:versions", openclaw: "apps:versions" },
+  { id: "browse_apps",       endpoint: "GET /apps/v1",                              mcp: "browse_apps",   cli: "apps:browse",   openclaw: "apps:browse" },
+  { id: "fork_app",          endpoint: "POST /fork/v1",                             mcp: "fork_app",      cli: "apps:fork",     openclaw: "apps:fork" },
+  { id: "publish_app",       endpoint: "POST /projects/v1/admin/:id/publish",       mcp: "publish_app",   cli: "apps:publish",  openclaw: "apps:publish" },
+  { id: "list_versions",     endpoint: "GET /projects/v1/admin/:id/versions",       mcp: "list_versions", cli: "apps:versions", openclaw: "apps:versions" },
 
   // ── Billing ──────────────────────────────────────────────────────────────
-  { id: "check_balance",     endpoint: "GET /v1/billing/accounts/:wallet",         mcp: "check_balance",  cli: "wallet:balance", openclaw: "wallet:balance" },
-  { id: "list_projects",     endpoint: "GET /v1/wallets/:wallet/projects",         mcp: "list_projects",  cli: "projects:list",  openclaw: "projects:list" },
+  { id: "check_balance",     endpoint: "GET /billing/v1/accounts/:wallet",           mcp: "check_balance",  cli: "wallet:balance", openclaw: "wallet:balance" },
+  { id: "list_projects",     endpoint: "GET /wallets/v1/:wallet/projects",           mcp: "list_projects",  cli: "projects:list",  openclaw: "projects:list" },
 
   // ── Image generation ─────────────────────────────────────────────────────
-  { id: "generate_image",    endpoint: "POST /v1/generate-image",          mcp: "generate_image",   cli: "image:generate",   openclaw: "image:generate" },
+  { id: "generate_image",    endpoint: "POST /generate-image/v1",           mcp: "generate_image",   cli: "image:generate",   openclaw: "image:generate" },
 
   // ── Messaging & agent contact ──────────────────────────────────────────
-  { id: "send_message",      endpoint: "POST /v1/message",                 mcp: "send_message",        cli: "message:send",     openclaw: "message:send" },
-  { id: "set_agent_contact", endpoint: "PUT /v1/agent/contact",            mcp: "set_agent_contact",   cli: "agent:contact",    openclaw: "agent:contact" },
+  { id: "send_message",      endpoint: "POST /message/v1",                  mcp: "send_message",        cli: "message:send",     openclaw: "message:send" },
+  { id: "set_agent_contact", endpoint: "POST /agent/v1/contact",            mcp: "set_agent_contact",   cli: "agent:contact",    openclaw: "agent:contact" },
 
   // ── Additional billing ─────────────────────────────────────────────────
-  { id: "create_checkout",   endpoint: "POST /v1/billing/checkouts",       mcp: "create_checkout",     cli: "wallet:checkout",  openclaw: "wallet:checkout" },
-  { id: "billing_history",   endpoint: "GET /v1/billing/accounts/:wallet/history", mcp: "billing_history", cli: "wallet:history", openclaw: "wallet:history" },
+  { id: "create_checkout",   endpoint: "POST /billing/v1/checkouts",        mcp: "create_checkout",     cli: "wallet:checkout",  openclaw: "wallet:checkout" },
+  { id: "billing_history",   endpoint: "GET /billing/v1/accounts/:wallet/history", mcp: "billing_history", cli: "wallet:history", openclaw: "wallet:history" },
 
   // ── Deployment status ──────────────────────────────────────────────────
-  { id: "get_deployment",    endpoint: "GET /v1/deployments/:id",          mcp: "get_deployment",      cli: "sites:status",     openclaw: "sites:status" },
+  { id: "get_deployment",    endpoint: "GET /deployments/v1/:id",           mcp: "get_deployment",      cli: "sites:status",     openclaw: "sites:status" },
 
   // ── Version management ─────────────────────────────────────────────────
-  { id: "update_version",    endpoint: "PATCH /admin/v1/projects/:id/versions/:version_id", mcp: "update_version", cli: "apps:update", openclaw: "apps:update" },
-  { id: "delete_version",    endpoint: "DELETE /admin/v1/projects/:id/versions/:version_id", mcp: "delete_version", cli: "apps:delete", openclaw: "apps:delete" },
-  { id: "get_app",           endpoint: "GET /v1/apps/:version_id",         mcp: "get_app",             cli: "apps:inspect",     openclaw: "apps:inspect" },
+  { id: "update_version",    endpoint: "PATCH /projects/v1/admin/:id/versions/:version_id", mcp: "update_version", cli: "apps:update", openclaw: "apps:update" },
+  { id: "delete_version",    endpoint: "DELETE /projects/v1/admin/:id/versions/:version_id", mcp: "delete_version", cli: "apps:delete", openclaw: "apps:delete" },
+  { id: "get_app",           endpoint: "GET /apps/v1/:version_id",          mcp: "get_app",             cli: "apps:inspect",     openclaw: "apps:inspect" },
 
   // ── Wallet management ──────────────────────────────────────────────────
   { id: "wallet_status",     endpoint: "(local)",                          mcp: "wallet_status",    cli: "wallet:status",    openclaw: "wallet:status" },
@@ -379,18 +379,21 @@ describe("llms.txt alignment", { skip: !llmsTxtAvailable && "~/dev/run402/site/l
 
     // Informational GET endpoints and auth/REST proxied endpoints that don't need dedicated tools
     const IGNORED_ENDPOINTS = new Set([
+      // Tier management (handled internally by provision/renew/bundle/fork)
+      "GET /tiers/v1",
+      "POST /tiers/v1/subscribe/:tier",
+      "POST /tiers/v1/upgrade/:tier",
+      "GET /tiers/v1/status",
       // Info/discovery endpoints (return pricing or schema, no action)
-      "GET /v1/projects",
-      "GET /v1/deployments",
-      "GET /v1/deploy",
-      "GET /v1/fork",
-      "GET /v1/generate-image",
-      "GET /v1/message",
-      "GET /v1/agent/contact",
-      // Variant of provision (covered by provision_postgres_project)
-      "POST /v1/projects/create/:tier",
+      "GET /projects/v1",
+      "GET /deployments/v1",
+      "GET /deploy/v1",
+      "GET /fork/v1",
+      "GET /generate-image/v1",
+      "GET /message/v1",
+      "GET /agent/v1/contact",
       // Subdomain lookup (covered by list_subdomains)
-      "GET /v1/subdomains/:name",
+      "GET /subdomains/v1/:name",
       // REST proxy (covered by rest_query)
       "GET /rest/v1/:table",
       "POST /rest/v1/:table",
@@ -411,7 +414,7 @@ describe("llms.txt alignment", { skip: !llmsTxtAvailable && "~/dev/run402/site/l
       // Utility endpoints
       "GET /.well-known/x402",
       "GET /health",
-      "GET /v1/ping",
+      "GET /ping/v1",
     ]);
 
     const uncovered = documented.filter(ep => {

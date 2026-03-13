@@ -72,7 +72,7 @@ export async function handleBundleDeploy(args: {
 }): Promise<{ content: Array<{ type: "text"; text: string }>; isError?: boolean }> {
   const tier = args.tier || "prototype";
 
-  const res = await apiRequest(`/deploy/v1/${tier}`, {
+  const res = await apiRequest("/deploy/v1", {
     method: "POST",
     body: {
       name: args.name,

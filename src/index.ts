@@ -208,7 +208,7 @@ server.tool(
 
 server.tool(
   "deploy_site",
-  "Deploy a static site (HTML/CSS/JS). Files are uploaded to S3 and served via CloudFront at a unique URL. Costs $0.05 USDC via x402.",
+  "Deploy a static site (HTML/CSS/JS). Files are uploaded to S3 and served via CloudFront at a unique URL. Free with active tier.",
   deploySiteSchema,
   async (args) => handleDeploySite(args),
 );
@@ -238,7 +238,7 @@ server.tool(
 
 server.tool(
   "bundle_deploy",
-  "One-call full-stack app deployment. Provisions a database and optionally runs migrations, applies RLS, sets secrets, deploys functions, deploys a static site, and claims a subdomain — all in a single x402 payment.",
+  "One-call full-stack app deployment. Provisions a database and optionally runs migrations, applies RLS, sets secrets, deploys functions, deploys a static site, and claims a subdomain. Free with active tier.",
   bundleDeploySchema,
   async (args) => handleBundleDeploy(args),
 );
@@ -353,14 +353,14 @@ server.tool(
 
 server.tool(
   "send_message",
-  "Send a message to the Run402 developers. Costs $0.01 USDC via x402.",
+  "Send a message to the Run402 developers. Free with wallet auth.",
   sendMessageSchema,
   async (args) => handleSendMessage(args),
 );
 
 server.tool(
   "set_agent_contact",
-  "Register agent contact info (name, email, webhook) so Run402 can reach you. Costs $0.001 USDC via x402.",
+  "Register agent contact info (name, email, webhook) so Run402 can reach you. Free with wallet auth.",
   setAgentContactSchema,
   async (args) => handleSetAgentContact(args),
 );

@@ -6,7 +6,7 @@
  *   node deploy.mjs --tier prototype --manifest manifest.json
  *   echo '{"name":"app","site":[...]}' | node deploy.mjs --tier prototype
  *
- * Manifest JSON fields (passed to POST /deploy/v1/:tier):
+ * Manifest JSON fields (passed to POST /deploy/v1):
  *   name, migrations, rls, secrets, functions, site, subdomain
  */
 
@@ -75,7 +75,7 @@ async function main() {
   client.register("eip155:84532", new ExactEvmScheme(signer));
   const fetchPaid = wrapFetchWithPayment(fetch, client);
 
-  const res = await fetchPaid(`${API}/deploy/v1/${opts.tier}`, {
+  const res = await fetchPaid(`${API}/deploy/v1`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(manifest),

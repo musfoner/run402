@@ -18,13 +18,13 @@ export async function handleSetAgentContact(args: {
   if (args.webhook) body.webhook = args.webhook;
 
   const res = await apiRequest("/agent/v1/contact", {
-    method: "PUT",
+    method: "POST",
     body,
   });
 
   if (res.is402) {
     return {
-      content: [{ type: "text", text: `## Payment Required\n\nRegistering agent contact costs $0.001 via x402.\n\n${JSON.stringify(res.body, null, 2)}` }],
+      content: [{ type: "text", text: `## Auth Required\n\nRegistering agent contact requires wallet auth.\n\n${JSON.stringify(res.body, null, 2)}` }],
     };
   }
 

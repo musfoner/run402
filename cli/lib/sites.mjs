@@ -34,7 +34,7 @@ Examples:
 
 Notes:
   - Must include at least index.html in the files array
-  - Requires a funded wallet — payment ($0.05 USDC) is automatic via x402
+  - Free with active tier — requires wallet auth
 `;
 
 async function readStdin() {

@@ -49,7 +49,7 @@ export async function handleDeploySite(args: {
     const lines = [
       `## Payment Required`,
       ``,
-      `To deploy a static site, an x402 payment of **$0.05 USDC** is needed.`,
+      `To deploy a static site, an active tier subscription is needed.`,
       ``,
     ];
     if (body.x402) {

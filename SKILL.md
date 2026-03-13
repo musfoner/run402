@@ -150,7 +150,7 @@ Deploy a static site (HTML/CSS/JS/images). Files are uploaded to S3 and served v
 }
 ```
 
-**Returns on 402 (payment required):** Payment details as informational text (not an error). Costs $0.05 USDC per deployment.
+Free with active tier. Requires wallet auth.
 
 **Examples:**
 ```

@@ -59,7 +59,7 @@ async function setupPaidFetch() {
 }
 
 async function quote() {
-  const res = await fetch(`${API}/projects/v1`);
+  const res = await fetch(`${API}/tiers/v1`);
   const data = await res.json();
   if (!res.ok) { console.error(JSON.stringify({ status: "error", http: res.status, ...data })); process.exit(1); }
   console.log(JSON.stringify(data, null, 2));
@@ -143,8 +143,10 @@ async function schema(projectId) {
 }
 
 async function renew(projectId) {
+  const p = findProject(projectId);
+  const tier = p.tier || "prototype";
   const fetchPaid = await setupPaidFetch();
-  const res = await fetchPaid(`${API}/projects/v1/${projectId}/renew`, { method: "POST", headers: { "Content-Type": "application/json" } });
+  const res = await fetchPaid(`${API}/tiers/v1/renew/${tier}`, { method: "POST", headers: { "Content-Type": "application/json" } });
   const data = await res.json();
   if (!res.ok) { console.error(JSON.stringify({ status: "error", http: res.status, ...data })); process.exit(1); }
   const projects = loadProjects();

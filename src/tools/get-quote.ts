@@ -8,7 +8,7 @@ export async function handleGetQuote(_args: Record<string, never>): Promise<{
   content: Array<{ type: "text"; text: string }>;
   isError?: boolean;
 }> {
-  const res = await apiRequest("/projects/v1", { method: "GET" });
+  const res = await apiRequest("/tiers/v1", { method: "GET" });
 
   if (!res.ok) return formatApiError(res, "getting quote");
 

@@ -41,7 +41,7 @@ async function contact(extraArgs) {
   if (webhook) body.webhook = webhook;
 
   const res = await fetchPaid(`${API}/agent/v1/contact`, {
-    method: "PUT",
+    method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });

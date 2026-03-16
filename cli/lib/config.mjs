@@ -5,7 +5,6 @@
 
 import { getApiBase, getConfigDir, getKeystorePath, getAllowancePath } from "../core-dist/config.js";
 import { readAllowance as coreReadAllowance, saveAllowance as coreSaveAllowance } from "../core-dist/allowance.js";
-import { getAllowanceAuthHeaders } from "../core-dist/allowance-auth.js";
 import { loadKeyStore, getProject, saveProject, removeProject, saveKeyStore } from "../core-dist/keystore.js";
 
 export const CONFIG_DIR = getConfigDir();
@@ -22,9 +21,13 @@ export function saveAllowance(data) {
 }
 
 export async function allowanceAuthHeaders() {
-  const headers = getAllowanceAuthHeaders();
-  if (!headers) { console.error(JSON.stringify({ status: "error", message: "No agent allowance found. Run: run402 allowance create" })); process.exit(1); }
-  return headers;
+  const w = readAllowance();
+  if (!w) { console.error(JSON.stringify({ status: "error", message: "No agent allowance found. Run: run402 allowance create" })); process.exit(1); }
+  const { privateKeyToAccount } = await import("viem/accounts");
+  const account = privateKeyToAccount(w.privateKey);
+  const timestamp = Math.floor(Date.now() / 1000).toString();
+  const signature = await account.signMessage({ message: `run402:${timestamp}` });
+  return { "X-Run402-Wallet": account.address, "X-Run402-Signature": signature, "X-Run402-Timestamp": timestamp };
 }
 
 export function findProject(id) {

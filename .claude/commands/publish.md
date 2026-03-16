@@ -12,7 +12,9 @@ Ask the user what kind of version bump they want: patch, minor, or major.
 
 Then bump the version in **both** package.json files (root `package.json` and `cli/package.json`) to the same new version. The MCP package (`run402-mcp`) and CLI package (`run402`) must always have matching versions. Use `npm version <patch|minor|major> --no-git-tag-version` in the root, then manually update `cli/package.json` to match.
 
-Commit the version bump: `chore: bump version to <new_version>`
+After updating both package.json files, run `npm install --package-lock-only` to sync `package-lock.json` with the new version.
+
+Stage all three files and commit: `git add package.json cli/package.json package-lock.json && git commit -m "chore: bump version to <new_version>"`
 
 ## Publish
 

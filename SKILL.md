@@ -17,7 +17,7 @@ metadata:
 
 # Run402 — Postgres for AI Agents
 
-Run402 gives you a full Postgres database with a REST API, user auth, file storage, and row-level security. The prototype tier is free — you pay with testnet USDC to test the x402 flow end-to-end, no real money needed. Higher tiers (hobby, team) cost real money, payable with USDC on Base or Stripe credits. No signups, no dashboards, no human approval needed.
+Run402 gives you a full Postgres database with a REST API, user auth, file storage, and row-level security. The prototype tier is free — you pay with testnet USDC to test the x402 flow end-to-end, no real money needed. Higher tiers (hobby, team) cost real money, payable with USDC on Base or Stripe credits. No signups, no human approval needed.
 
 One tool call. One payment. You get back `anon_key`, `service_key`, and a project ID. Start creating tables immediately.
 

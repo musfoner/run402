@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { mkdtempSync, rmSync, readFileSync, writeFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
-import { loadKeyStore, saveKeyStore, getProject, saveProject, removeProject } from "./keystore.js";
+import { loadKeyStore, saveKeyStore, getProject, saveProject, removeProject, getActiveProjectId, setActiveProjectId } from "./keystore.js";
 import type { StoredProject, KeyStore } from "./keystore.js";
 
 let tempDir: string;
@@ -28,8 +28,6 @@ describe("core keystore", () => {
     const project: StoredProject = {
       anon_key: "anon-key-123",
       service_key: "svc-key-456",
-      tier: "prototype",
-      lease_expires_at: "2026-03-06T00:00:00Z",
     };
     saveProject("proj-001", project, storePath);
     const loaded = getProject("proj-001", storePath);
@@ -38,8 +36,7 @@ describe("core keystore", () => {
 
   it("creates file with 0600 permissions", () => {
     saveProject("proj-002", {
-      anon_key: "ak", service_key: "sk", tier: "hobby",
-      lease_expires_at: "2026-04-01T00:00:00Z",
+      anon_key: "ak", service_key: "sk",
     }, storePath);
     const stats = statSync(storePath);
     const mode = stats.mode & 0o777;
@@ -48,12 +45,19 @@ describe("core keystore", () => {
 
   it("removes a project", () => {
     saveProject("proj-rm", {
-      anon_key: "ak", service_key: "sk", tier: "prototype",
-      lease_expires_at: "2026-03-01T00:00:00Z",
+      anon_key: "ak", service_key: "sk",
     }, storePath);
     assert.ok(getProject("proj-rm", storePath));
     removeProject("proj-rm", storePath);
     assert.equal(getProject("proj-rm", storePath), undefined);
+  });
+
+  it("removes active_project_id when deleting the active project", () => {
+    saveProject("proj-active", { anon_key: "ak", service_key: "sk" }, storePath);
+    setActiveProjectId("proj-active", storePath);
+    assert.equal(getActiveProjectId(storePath), "proj-active");
+    removeProject("proj-active", storePath);
+    assert.equal(getActiveProjectId(storePath), undefined);
   });
 
   it("auto-migrates array format to object format", () => {
@@ -65,26 +69,31 @@ describe("core keystore", () => {
     assert.ok(store.projects["prj_a"]);
     assert.equal(store.projects["prj_a"]!.anon_key, "ak1");
     assert.ok(store.projects["prj_b"]);
-    assert.equal(store.projects["prj_b"]!.tier, "hobby");
+    // tier is stripped during migration
+    assert.equal((store.projects["prj_b"] as Record<string, unknown>).tier, undefined);
   });
 
-  it("auto-migrates expires_at to lease_expires_at", () => {
+  it("strips legacy tier/lease_expires_at/expires_at from object format", () => {
     writeFileSync(storePath, JSON.stringify({
       projects: {
-        "prj_old": { anon_key: "ak", service_key: "sk", tier: "prototype", expires_at: "2026-03-01T00:00:00Z" },
+        "prj_old": { anon_key: "ak", service_key: "sk", tier: "prototype", expires_at: "2026-03-01T00:00:00Z", lease_expires_at: "2026-03-01T00:00:00Z" },
       },
     }));
     const store = loadKeyStore(storePath);
-    assert.equal(store.projects["prj_old"]!.lease_expires_at, "2026-03-01T00:00:00Z");
-    assert.equal((store.projects["prj_old"] as Record<string, unknown>).expires_at, undefined);
+    const rec = store.projects["prj_old"] as Record<string, unknown>;
+    assert.equal(rec.tier, undefined);
+    assert.equal(rec.lease_expires_at, undefined);
+    assert.equal(rec.expires_at, undefined);
+    assert.equal(store.projects["prj_old"]!.anon_key, "ak");
   });
 
-  it("auto-migrates array with expires_at field", () => {
+  it("auto-migrates array with legacy fields stripped", () => {
     writeFileSync(storePath, JSON.stringify([
       { project_id: "prj_legacy", anon_key: "ak", service_key: "sk", tier: "prototype", expires_at: "2026-05-01T00:00:00Z" },
     ]));
     const store = loadKeyStore(storePath);
-    assert.equal(store.projects["prj_legacy"]!.lease_expires_at, "2026-05-01T00:00:00Z");
+    assert.equal(store.projects["prj_legacy"]!.anon_key, "ak");
+    assert.equal((store.projects["prj_legacy"] as Record<string, unknown>).tier, undefined);
   });
 
   it("preserves site_url and deployed_at in array migration", () => {
@@ -94,6 +103,21 @@ describe("core keystore", () => {
     const store = loadKeyStore(storePath);
     assert.equal(store.projects["prj_site"]!.site_url, "https://test.sites.run402.com");
     assert.equal(store.projects["prj_site"]!.deployed_at, "2026-03-01T00:00:00Z");
+  });
+
+  it("preserves active_project_id from existing store", () => {
+    writeFileSync(storePath, JSON.stringify({
+      active_project_id: "prj_x",
+      projects: { "prj_x": { anon_key: "ak", service_key: "sk" } },
+    }));
+    const store = loadKeyStore(storePath);
+    assert.equal(store.active_project_id, "prj_x");
+  });
+
+  it("sets and gets active project id", () => {
+    saveProject("prj_act", { anon_key: "ak", service_key: "sk" }, storePath);
+    setActiveProjectId("prj_act", storePath);
+    assert.equal(getActiveProjectId(storePath), "prj_act");
   });
 
   it("handles corrupt JSON gracefully", () => {

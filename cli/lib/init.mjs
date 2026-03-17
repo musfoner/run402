@@ -84,13 +84,6 @@ export async function run() {
     if (res.ok) tierInfo = await res.json();
   } catch {}
 
-  // Fall back to keystore if the API call failed or returned no tier
-  if (!tierInfo || !tierInfo.tier) {
-    const projects = Object.values(store.projects);
-    const active = projects.find(p => p.tier && p.lease_expires_at && new Date(p.lease_expires_at) > new Date());
-    if (active) tierInfo = { tier: active.tier, status: "active", lease_expires_at: active.lease_expires_at };
-  }
-
   if (tierInfo && tierInfo.tier && tierInfo.status === "active") {
     const expiry = tierInfo.lease_expires_at ? tierInfo.lease_expires_at.split("T")[0] : "unknown";
     line("Tier", `${tierInfo.tier} (expires ${expiry})`);

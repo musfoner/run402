@@ -5,7 +5,7 @@
 
 import { getApiBase, getConfigDir, getKeystorePath, getAllowancePath } from "../core-dist/config.js";
 import { readAllowance as coreReadAllowance, saveAllowance as coreSaveAllowance } from "../core-dist/allowance.js";
-import { loadKeyStore, getProject, saveProject, removeProject, saveKeyStore } from "../core-dist/keystore.js";
+import { loadKeyStore, getProject, saveProject, updateProject, removeProject, saveKeyStore, getActiveProjectId, setActiveProjectId } from "../core-dist/keystore.js";
 
 export const CONFIG_DIR = getConfigDir();
 export const ALLOWANCE_FILE = getAllowancePath();
@@ -36,5 +36,17 @@ export function findProject(id) {
   return p;
 }
 
+export function resolveProject(id) {
+  const projectId = id || getActiveProjectId();
+  if (!projectId) { console.error("Error: no project specified and no active project set. Run: run402 projects provision"); process.exit(1); }
+  return findProject(projectId);
+}
+
+export function resolveProjectId(id) {
+  const projectId = id || getActiveProjectId();
+  if (!projectId) { console.error("Error: no project specified and no active project set. Run: run402 projects provision"); process.exit(1); }
+  return projectId;
+}
+
 // Re-export core keystore functions for direct use
-export { loadKeyStore, saveProject, removeProject, saveKeyStore };
+export { loadKeyStore, saveProject, updateProject, removeProject, saveKeyStore, getActiveProjectId, setActiveProjectId };

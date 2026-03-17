@@ -6,13 +6,13 @@ import { getKeystorePath } from "./config.js";
 export interface StoredProject {
   anon_key: string;
   service_key: string;
-  tier: string;
-  lease_expires_at: string;
   site_url?: string;
   deployed_at?: string;
+  last_deployment_id?: string;
 }
 
 export interface KeyStore {
+  active_project_id?: string;
   projects: Record<string, StoredProject>;
 }
 
@@ -36,8 +36,6 @@ export function loadKeyStore(path?: string): KeyStore {
           projects[item.project_id] = {
             anon_key: item.anon_key,
             service_key: item.service_key,
-            tier: item.tier,
-            lease_expires_at: item.lease_expires_at || item.expires_at || "",
             ...(item.site_url && { site_url: item.site_url }),
             ...(item.deployed_at && { deployed_at: item.deployed_at }),
           };
@@ -47,15 +45,17 @@ export function loadKeyStore(path?: string): KeyStore {
     }
 
     if (parsed && typeof parsed === "object" && parsed.projects) {
-      // Auto-normalize expires_at → lease_expires_at
+      // Strip legacy fields (tier, lease_expires_at, expires_at) from projects
       for (const proj of Object.values(parsed.projects)) {
         const rec = proj as Record<string, unknown>;
-        if (rec.expires_at && !rec.lease_expires_at) {
-          rec.lease_expires_at = rec.expires_at;
-          delete rec.expires_at;
-        }
+        delete rec.tier;
+        delete rec.lease_expires_at;
+        delete rec.expires_at;
       }
-      return parsed as KeyStore;
+      return {
+        ...(parsed.active_project_id && { active_project_id: parsed.active_project_id }),
+        projects: parsed.projects,
+      } as KeyStore;
     }
 
     return { projects: {} };
@@ -94,6 +94,20 @@ export function saveProject(
   saveKeyStore(store, p);
 }
 
+export function updateProject(
+  projectId: string,
+  update: Partial<StoredProject>,
+  path?: string,
+): void {
+  const p = path ?? getKeystorePath();
+  const store = loadKeyStore(p);
+  const existing = store.projects[projectId];
+  if (existing) {
+    store.projects[projectId] = { ...existing, ...update };
+    saveKeyStore(store, p);
+  }
+}
+
 export function removeProject(
   projectId: string,
   path?: string,
@@ -101,5 +115,23 @@ export function removeProject(
   const p = path ?? getKeystorePath();
   const store = loadKeyStore(p);
   delete store.projects[projectId];
+  if (store.active_project_id === projectId) {
+    delete store.active_project_id;
+  }
+  saveKeyStore(store, p);
+}
+
+export function getActiveProjectId(path?: string): string | undefined {
+  const store = loadKeyStore(path);
+  return store.active_project_id;
+}
+
+export function setActiveProjectId(
+  projectId: string,
+  path?: string,
+): void {
+  const p = path ?? getKeystorePath();
+  const store = loadKeyStore(p);
+  store.active_project_id = projectId;
   saveKeyStore(store, p);
 }

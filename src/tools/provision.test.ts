@@ -19,7 +19,7 @@ mock.module("../allowance-auth.js", {
 });
 
 const { handleProvision } = await import("./provision.js");
-const { getProject } = await import("../keystore.js");
+const { getProject, getActiveProjectId } = await import("../keystore.js");
 
 const originalFetch = globalThis.fetch;
 let tempDir: string;
@@ -55,8 +55,6 @@ describe("provision tool", () => {
           anon_key: "ak-123",
           service_key: "sk-456",
           schema_slot: "p0042",
-          tier: "prototype",
-          lease_expires_at: "2026-03-06T00:00:00.000Z",
         }),
         { status: 200, headers: { "Content-Type": "application/json" } },
       )) as typeof fetch;
@@ -70,7 +68,7 @@ describe("provision tool", () => {
     assert.ok(stored);
     assert.equal(stored!.anon_key, "ak-123");
     assert.equal(stored!.service_key, "sk-456");
-    assert.equal(stored!.tier, "prototype");
+    assert.equal(getActiveProjectId(storePath), "proj-001");
   });
 
   it("returns allowance auth error when no allowance configured", async () => {
@@ -118,8 +116,6 @@ describe("provision tool", () => {
           anon_key: "ak-new",
           service_key: "sk-new",
           schema_slot: "p0001",
-          tier: "hobby",
-          lease_expires_at: "2026-04-01T00:00:00.000Z",
         }),
         { status: 200, headers: { "Content-Type": "application/json" } },
       )) as typeof fetch;
@@ -127,6 +123,5 @@ describe("provision tool", () => {
     await handleProvision({ tier: "hobby" });
     const stored = getProject("proj-dup", storePath);
     assert.equal(stored!.anon_key, "ak-new");
-    assert.equal(stored!.tier, "hobby");
   });
 });

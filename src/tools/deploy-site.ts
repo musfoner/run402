@@ -1,16 +1,13 @@
 import { z } from "zod";
 import { apiRequest } from "../client.js";
+import { updateProject } from "../keystore.js";
 import { formatApiError } from "../errors.js";
 import { requireAllowanceAuth } from "../allowance-auth.js";
 
 export const deploySiteSchema = {
-  name: z
-    .string()
-    .describe("Site name (e.g. 'family-todo', 'portfolio')"),
   project: z
     .string()
-    .optional()
-    .describe("Optional project ID to link this deployment to an existing Run402 project"),
+    .describe("Project ID to link this deployment to"),
   target: z
     .string()
     .optional()
@@ -30,8 +27,7 @@ export const deploySiteSchema = {
 };
 
 export async function handleDeploySite(args: {
-  name: string;
-  project?: string;
+  project: string;
   target?: string;
   files: Array<{ file: string; data: string; encoding?: string }>;
 }): Promise<{ content: Array<{ type: "text"; text: string }>; isError?: boolean }> {
@@ -42,7 +38,6 @@ export async function handleDeploySite(args: {
     method: "POST",
     headers: { ...auth.headers },
     body: {
-      name: args.name,
       project: args.project,
       target: args.target,
       files: args.files,
@@ -52,33 +47,23 @@ export async function handleDeploySite(args: {
   if (!res.ok) return formatApiError(res, "deploying site");
 
   const body = res.body as {
-    id: string;
-    name: string;
+    deployment_id: string;
     url: string;
-    project_id: string | null;
-    status: string;
-    created_at: string;
-    files_count: number;
-    total_size: number;
   };
+
+  // Store last deployment ID on the project
+  updateProject(args.project, { last_deployment_id: body.deployment_id });
 
   const lines = [
     `## Site Deployed`,
     ``,
     `| Field | Value |`,
     `|-------|-------|`,
-    `| id | \`${body.id}\` |`,
+    `| deployment_id | \`${body.deployment_id}\` |`,
     `| url | ${body.url} |`,
-    `| status | ${body.status} |`,
-    `| files | ${body.files_count} |`,
-    `| size | ${(body.total_size / 1024).toFixed(1)} KB |`,
     ``,
     `The site is live at **${body.url}**`,
   ];
-
-  if (body.project_id) {
-    lines.push(`Linked to project \`${body.project_id}\``);
-  }
 
   return { content: [{ type: "text", text: lines.join("\n") }] };
 }

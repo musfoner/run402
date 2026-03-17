@@ -1,4 +1,4 @@
-import { findProject, loadKeyStore, saveProject, removeProject, API, allowanceAuthHeaders } from "./config.mjs";
+import { findProject, loadKeyStore, saveProject, removeProject, API, allowanceAuthHeaders, setActiveProjectId, getActiveProjectId } from "./config.mjs";
 
 const HELP = `run402 projects — Manage your deployed Run402 projects
 
@@ -8,8 +8,9 @@ Usage:
 Subcommands:
   quote                                   Show pricing tiers
   provision [--tier <tier>] [--name <n>]  Provision a new Postgres project (pays via x402)
-  list                                    List all your projects (IDs, tiers, URLs, expiry)
-  info  <id>                              Show project details: REST URL, keys, expiry
+  use   <id>                              Set the active project (used as default for other commands)
+  list                                    List all your projects (IDs, URLs, active marker)
+  info  <id>                              Show project details: REST URL, keys
   sql   <id> "<query>"                    Run a SQL query against a project's Postgres DB
   rest  <id> <table> [params]             Query a table via the REST API (PostgREST)
   usage <id>                              Show compute/storage usage for a project
@@ -21,6 +22,7 @@ Examples:
   run402 projects quote
   run402 projects provision --tier prototype
   run402 projects provision --tier hobby --name my-app
+  run402 projects use prj_abc123
   run402 projects list
   run402 projects info abc123
   run402 projects sql abc123 "SELECT * FROM users LIMIT 5"
@@ -32,6 +34,7 @@ Examples:
 
 Notes:
   - <id> is the project_id shown in 'run402 projects list'
+  - Most commands that take <id> default to the active project if omitted
   - 'rest' uses PostgREST query syntax (table name + optional query string)
   - 'provision' requires a funded allowance — payment is automatic via x402
   - RLS templates: user_owns_rows, public_read, public_read_write
@@ -60,13 +63,13 @@ async function provision(args) {
   });
   const data = await res.json();
   if (!res.ok) { console.error(JSON.stringify({ status: "error", http: res.status, ...data })); process.exit(1); }
-  // Save project credentials locally
+  // Save project credentials locally and set as active
   if (data.project_id) {
     saveProject(data.project_id, {
       anon_key: data.anon_key, service_key: data.service_key,
-      tier: data.tier, lease_expires_at: data.lease_expires_at,
       deployed_at: new Date().toISOString(),
     });
+    setActiveProjectId(data.project_id);
   }
   console.log(JSON.stringify(data, null, 2));
 }
@@ -88,17 +91,14 @@ async function list() {
   const store = loadKeyStore();
   const entries = Object.entries(store.projects);
   if (entries.length === 0) { console.log(JSON.stringify({ status: "ok", projects: [], message: "No projects yet." })); return; }
-  console.log(JSON.stringify(entries.map(([id, p]) => ({ project_id: id, tier: p.tier, site_url: p.site_url, lease_expires_at: p.lease_expires_at, deployed_at: p.deployed_at })), null, 2));
+  const activeId = store.active_project_id;
+  console.log(JSON.stringify(entries.map(([id, p]) => ({ project_id: id, active: id === activeId, site_url: p.site_url, deployed_at: p.deployed_at })), null, 2));
 }
 
 async function info(projectId) {
   const p = findProject(projectId);
-  const active = p.lease_expires_at ? new Date(p.lease_expires_at) > new Date() : null;
   console.log(JSON.stringify({
     project_id: projectId,
-    tier: p.tier,
-    active,
-    lease_expires_at: p.lease_expires_at,
     rest_url: `${API}/rest/v1`,
     anon_key: p.anon_key,
     service_key: p.service_key,
@@ -135,6 +135,13 @@ async function schema(projectId) {
   console.log(JSON.stringify(data, null, 2));
 }
 
+async function use(projectId) {
+  if (!projectId) { console.error("Usage: run402 projects use <project_id>"); process.exit(1); }
+  findProject(projectId); // verify it exists
+  setActiveProjectId(projectId);
+  console.log(JSON.stringify({ status: "ok", active_project_id: projectId }));
+}
+
 async function deleteProject(projectId) {
   const p = findProject(projectId);
   const res = await fetch(`${API}/projects/v1/${projectId}`, { method: "DELETE", headers: { "Authorization": `Bearer ${p.service_key}` } });
@@ -155,6 +162,7 @@ export async function run(sub, args) {
   switch (sub) {
     case "quote":     await quote(); break;
     case "provision": await provision(args); break;
+    case "use":       await use(args[0]); break;
     case "list":      await list(); break;
     case "info":      await info(args[0]); break;
     case "sql":       await sqlCmd(args[0], args[1]); break;

@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { apiRequest } from "../client.js";
-import { saveProject } from "../keystore.js";
+import { saveProject, setActiveProjectId } from "../keystore.js";
 import { formatApiError } from "../errors.js";
 import { requireAllowanceAuth } from "../allowance-auth.js";
 
@@ -90,20 +90,17 @@ export async function handleBundleDeploy(args: {
     anon_key: string;
     service_key: string;
     schema_slot: string;
-    tier: string;
-    lease_expires_at: string;
     site_url?: string;
     subdomain_url?: string;
     functions?: Array<{ name: string; url: string }>;
   };
 
-  // Save credentials to local key store
+  // Save credentials to local key store and set as active project
   saveProject(body.project_id, {
     anon_key: body.anon_key,
     service_key: body.service_key,
-    tier: body.tier,
-    lease_expires_at: body.lease_expires_at,
   });
+  setActiveProjectId(body.project_id);
 
   const lines = [
     `## Bundle Deployed: ${args.name}`,
@@ -111,9 +108,7 @@ export async function handleBundleDeploy(args: {
     `| Field | Value |`,
     `|-------|-------|`,
     `| project_id | \`${body.project_id}\` |`,
-    `| tier | ${body.tier} |`,
     `| schema | ${body.schema_slot} |`,
-    `| expires | ${body.lease_expires_at} |`,
   ];
 
   if (body.site_url) {

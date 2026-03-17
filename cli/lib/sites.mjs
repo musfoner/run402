@@ -1,21 +1,20 @@
 import { readFileSync } from "fs";
-import { API, allowanceAuthHeaders } from "./config.mjs";
+import { API, allowanceAuthHeaders, resolveProjectId, updateProject } from "./config.mjs";
 
 const HELP = `run402 sites — Deploy and manage static sites
 
 Usage:
-  run402 sites deploy --name <name> --manifest <file> [--project <id>] [--target <target>]
+  run402 sites deploy --manifest <file> [--project <id>] [--target <target>]
   run402 sites status <deployment_id>
-  cat manifest.json | run402 sites deploy --name <name>
+  cat manifest.json | run402 sites deploy
 
 Subcommands:
   deploy  Deploy a static site
   status  Check the status of a deployment
 
 Options (deploy):
-  --name <name>         Site name (e.g. 'portfolio', 'family-todo')
   --manifest <file>     Path to manifest JSON file (or read from stdin)
-  --project <id>        Optional project ID to link this deployment to
+  --project <id>        Project ID (defaults to active project)
   --target <target>     Deployment target (e.g. 'production')
   --help, -h            Show this help message
 
@@ -28,9 +27,9 @@ Manifest format (JSON):
   }
 
 Examples:
-  run402 sites deploy --name my-site --manifest site.json
-  run402 sites status dep_abc123
-  cat site.json | run402 sites deploy --name my-site
+  run402 sites deploy --manifest site.json
+  run402 sites status dpl_abc123
+  cat site.json | run402 sites deploy
 
 Notes:
   - Must include at least index.html in the files array
@@ -44,18 +43,16 @@ async function readStdin() {
 }
 
 async function deploy(args) {
-  const opts = { name: null, manifest: null, project: undefined, target: undefined };
+  const opts = { manifest: null, project: undefined, target: undefined };
   for (let i = 0; i < args.length; i++) {
     if (args[i] === "--help" || args[i] === "-h") { console.log(HELP); process.exit(0); }
-    if (args[i] === "--name" && args[i + 1]) opts.name = args[++i];
     if (args[i] === "--manifest" && args[i + 1]) opts.manifest = args[++i];
     if (args[i] === "--project" && args[i + 1]) opts.project = args[++i];
     if (args[i] === "--target" && args[i + 1]) opts.target = args[++i];
   }
-  if (!opts.name) { console.error(JSON.stringify({ status: "error", message: "Missing --name <name>" })); process.exit(1); }
+  const projectId = resolveProjectId(opts.project);
   const manifest = opts.manifest ? JSON.parse(readFileSync(opts.manifest, "utf-8")) : JSON.parse(await readStdin());
-  const body = { name: opts.name, files: manifest.files };
-  if (opts.project) body.project = opts.project;
+  const body = { files: manifest.files, project: projectId };
   if (opts.target) body.target = opts.target;
 
   const authHeaders = await allowanceAuthHeaders();
@@ -66,6 +63,9 @@ async function deploy(args) {
   });
   const data = await res.json();
   if (!res.ok) { console.error(JSON.stringify({ status: "error", http: res.status, ...data })); process.exit(1); }
+  if (data.deployment_id) {
+    updateProject(projectId, { last_deployment_id: data.deployment_id });
+  }
   console.log(JSON.stringify(data, null, 2));
 }
 

@@ -29,9 +29,7 @@ const TEST_PROJECT = {
   project_id: "prj_test123",
   anon_key: "anon_test_key",
   service_key: "svc_test_key",
-  tier: "prototype",
   schema_slot: "p0001",
-  lease_expires_at: "2026-03-22T00:00:00.000Z",
 };
 
 // ─── Mock fetch router ──────────────────────────────────────────────────────
@@ -228,8 +226,7 @@ function mockFetch(input, init) {
   // Deployments (sites)
   if (path === "/deployments/v1" && method === "POST") {
     return Promise.resolve(json({
-      id: "dpl_test456", name: "my-site", url: "https://dpl_test456.sites.run402.com",
-      project_id: null, status: "live", created_at: "2026-03-15T12:00:00Z", files_count: 1, total_size: 50,
+      deployment_id: "dpl_test456", url: "https://dpl_test456.sites.run402.com",
     }));
   }
   if (path.match(/^\/deployments\/v1\//) && method === "GET") {
@@ -612,7 +609,7 @@ describe("CLI e2e happy path", () => {
       files: [{ file: "index.html", data: "<h1>Site</h1>" }],
     }));
     captureStart();
-    await run("deploy", ["--name", "my-site", "--manifest", manifestPath]);
+    await run("deploy", ["--manifest", manifestPath]);
     captureStop();
     assert.ok(captured().includes("dpl_test456"), "should return deployment id");
   });

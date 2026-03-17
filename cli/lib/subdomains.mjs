@@ -1,4 +1,4 @@
-import { findProject, API } from "./config.mjs";
+import { resolveProject, resolveProjectId, API } from "./config.mjs";
 
 const HELP = `run402 subdomains — Manage custom subdomains
 
@@ -6,31 +6,43 @@ Usage:
   run402 subdomains <subcommand> [args...]
 
 Subcommands:
-  claim  <deployment_id> <name> --project <id>    Claim a subdomain for a deployment
-  delete <name> --project <id>                     Release a subdomain
-  list   <id>                                       List subdomains for a project
+  claim  <name> [--project <id>] [--deployment <id>]   Claim a subdomain
+  delete <name> [--project <id>]                        Release a subdomain
+  list   [<id>]                                         List subdomains for a project
+
+Options default to the active project and its last deployment when omitted.
+Legacy syntax 'claim <deployment_id> <name>' is still supported.
 
 Examples:
-  run402 subdomains claim dpl_abc123 myapp
-  run402 subdomains claim dpl_abc123 myapp --project proj123
+  run402 subdomains claim myapp
+  run402 subdomains claim myapp --deployment dpl_abc123 --project proj123
   run402 subdomains delete myapp
-  run402 subdomains list proj123
+  run402 subdomains list
 
 Notes:
   - Subdomain names: 3-63 chars, lowercase alphanumeric + hyphens
   - Creates <name>.run402.com pointing to the deployment
 `;
 
-async function claim(deploymentId, name, args) {
-  const opts = { project: null };
-  for (let i = 0; i < args.length; i++) {
-    if (args[i] === "--project" && args[i + 1]) opts.project = args[++i];
+async function claim(positionalArgs, flagArgs) {
+  const opts = { project: null, deployment: null };
+  for (let i = 0; i < flagArgs.length; i++) {
+    if (flagArgs[i] === "--project" && flagArgs[i + 1]) opts.project = flagArgs[++i];
+    if (flagArgs[i] === "--deployment" && flagArgs[i + 1]) opts.deployment = flagArgs[++i];
   }
-  if (!opts.project) {
-    console.error("Error: --project <id> is required for subdomain claim.");
-    process.exit(1);
+  // positional: [name] or [deployment_id, name]
+  let name, deploymentId;
+  if (positionalArgs.length >= 2) {
+    deploymentId = positionalArgs[0];
+    name = positionalArgs[1];
+  } else if (positionalArgs.length === 1) {
+    name = positionalArgs[0];
   }
-  const p = findProject(opts.project);
+  if (!name) { console.error("Usage: run402 subdomains claim <name> [--project <id>] [--deployment <id>]"); process.exit(1); }
+  const projectId = resolveProjectId(opts.project);
+  const p = resolveProject(opts.project);
+  deploymentId = opts.deployment || deploymentId || p.last_deployment_id;
+  if (!deploymentId) { console.error("Error: no deployment_id specified and no recent deployment found. Deploy a site first or pass --deployment <id>."); process.exit(1); }
   const headers = { "Content-Type": "application/json", "Authorization": `Bearer ${p.service_key}` };
   const res = await fetch(`${API}/subdomains/v1`, {
     method: "POST",
@@ -47,11 +59,7 @@ async function deleteSubdomain(name, args) {
   for (let i = 0; i < args.length; i++) {
     if (args[i] === "--project" && args[i + 1]) opts.project = args[++i];
   }
-  if (!opts.project) {
-    console.error("Error: --project <id> is required for subdomain delete.");
-    process.exit(1);
-  }
-  const p = findProject(opts.project);
+  const p = resolveProject(opts.project);
   const headers = { "Authorization": `Bearer ${p.service_key}` };
   const res = await fetch(`${API}/subdomains/v1/${encodeURIComponent(name)}`, {
     method: "DELETE",
@@ -66,7 +74,7 @@ async function deleteSubdomain(name, args) {
 }
 
 async function list(projectId) {
-  const p = findProject(projectId);
+  const p = resolveProject(projectId);
   const res = await fetch(`${API}/subdomains/v1`, {
     headers: { "Authorization": `Bearer ${p.service_key}` },
   });
@@ -78,7 +86,17 @@ async function list(projectId) {
 export async function run(sub, args) {
   if (!sub || sub === '--help' || sub === '-h') { console.log(HELP); process.exit(0); }
   switch (sub) {
-    case "claim":  await claim(args[0], args[1], args.slice(2)); break;
+    case "claim": {
+      const positional = [];
+      const flags = [];
+      let i = 0;
+      while (i < args.length) {
+        if (args[i].startsWith("--")) { flags.push(args[i], args[i + 1]); i += 2; }
+        else { positional.push(args[i]); i++; }
+      }
+      await claim(positional, flags);
+      break;
+    }
     case "delete": await deleteSubdomain(args[0], args.slice(1)); break;
     case "list":   await list(args[0]); break;
     default:

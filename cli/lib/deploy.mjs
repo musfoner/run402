@@ -1,5 +1,5 @@
 import { readFileSync } from "fs";
-import { API, allowanceAuthHeaders, saveProject } from "./config.mjs";
+import { API, allowanceAuthHeaders, saveProject, setActiveProjectId } from "./config.mjs";
 
 const HELP = `run402 deploy — Deploy a full-stack app or static site on Run402
 
@@ -55,10 +55,10 @@ export async function run(args) {
   if (result.project_id) {
     saveProject(result.project_id, {
       anon_key: result.anon_key, service_key: result.service_key,
-      tier: result.tier, lease_expires_at: result.lease_expires_at,
       site_url: result.site_url || result.subdomain_url,
       deployed_at: new Date().toISOString(),
     });
+    setActiveProjectId(result.project_id);
   }
   console.log(JSON.stringify(result, null, 2));
 }

@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { apiRequest } from "../client.js";
-import { saveProject } from "../keystore.js";
+import { saveProject, setActiveProjectId } from "../keystore.js";
 import { formatApiError } from "../errors.js";
 import { requireAllowanceAuth } from "../allowance-auth.js";
 
@@ -37,18 +37,15 @@ export async function handleProvision(args: {
     project_id: string;
     anon_key: string;
     service_key: string;
-    tier: string;
-    lease_expires_at: string;
     schema_slot: string;
   };
 
-  // Save credentials to local key store
+  // Save credentials to local key store and set as active project
   saveProject(body.project_id, {
     anon_key: body.anon_key,
     service_key: body.service_key,
-    tier: body.tier,
-    lease_expires_at: body.lease_expires_at,
   });
+  setActiveProjectId(body.project_id);
 
   const lines = [
     `## Project Provisioned`,
@@ -56,9 +53,7 @@ export async function handleProvision(args: {
     `| Field | Value |`,
     `|-------|-------|`,
     `| project_id | \`${body.project_id}\` |`,
-    `| tier | ${body.tier} |`,
     `| schema | ${body.schema_slot} |`,
-    `| expires | ${body.lease_expires_at} |`,
     ``,
     `Keys saved to local key store. You can now use \`run_sql\`, \`rest_query\`, and \`upload_file\` with this project.`,
   ];

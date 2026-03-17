@@ -22,7 +22,7 @@
     "viem": "^2.47.1"
   },
   "engines": {
-    "node": ">=20"
+    "node": ">=22"
   },
   "license": "MIT",
   "homepage": "https://run402.com",

